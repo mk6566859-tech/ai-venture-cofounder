@@ -53,7 +53,7 @@ def seed_default_venture_if_empty():
     from database.database import get_db
     try:
         with get_db() as conn:
-            conn.execute("UPDATE startups SET founder_name = 'Ali Hassan' WHERE founder_name = 'Ahmed Khan' OR founder_name IS NULL;")
+            conn.execute("UPDATE startups SET founder_name = 'Malik Kashan' WHERE founder_name IN ('Ali Hassan', 'Ahmed Khan') OR founder_name IS NULL;")
             # Migrate any legacy seed that was stuck at Day 4 to Day 1
             conn.execute("UPDATE roadmaps SET current_day = 1, progress_percent = 0.0 WHERE current_day = 4 AND startup_id IN (SELECT id FROM startups WHERE name = 'CampusBites AI');")
             conn.execute("UPDATE roadmap_tasks SET is_completed = 0 WHERE roadmap_id IN (SELECT id FROM roadmaps WHERE startup_id IN (SELECT id FROM startups WHERE name = 'CampusBites AI'));")
@@ -76,7 +76,7 @@ def seed_default_venture_if_empty():
         target_customer="University Students & Campus Vendors",
         budget=25000.0,
         currency="$",
-        founder_name="Ali Hassan",
+        founder_name="Malik Kashan",
         founder_experience="Intermediate",
         additional_context="Access to 3 large campus student networks and 15 partner food vendors.",
         status="completed",

@@ -132,10 +132,9 @@ DARK_THEME_CSS = """
     transition: all 0.2s ease !important;
 }
 
-/* Hide default streamlit header clutter */
+/* Keep the header visible so Streamlit's sidebar reopen control remains available. */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-header {visibility: hidden;}
 </style>
 """
 
@@ -175,4 +174,3 @@ def get_width_kwargs(stretch: bool = True) -> dict:
     except Exception:
         pass
     return {"use_container_width": stretch}
-

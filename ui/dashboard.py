@@ -39,8 +39,8 @@ def render_dashboard(
         return
 
     founder_name = (
-        "Ali Hassan"
-        if (not startup or not startup.founder_name or startup.founder_name in ["Ahmed Khan", "Founder"])
+        "Malik Kashan"
+        if (not startup or not startup.founder_name or startup.founder_name in ["Ali Hassan", "Ahmed Khan", "Founder"])
         else startup.founder_name
     )
 

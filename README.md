@@ -10,6 +10,8 @@
 
 Grounded with an Advanced Retrieval-Augmented Generation (**RAG**) pipeline utilizing **FAISS**, the founding team validates consumer demand, identifies competitors' vulnerabilities, models 12-month unit economics, architects software infrastructure, and delivers an authoritative **Startup Blueprint** with a **Dynamic Execution Roadmap**.
 
+**Developed by Malik Kashan.**
+
 ---
 
 ## 2. Core Capabilities
