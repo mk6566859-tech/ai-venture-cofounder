@@ -43,6 +43,7 @@ from ui import (
     render_chat_view,
     render_reports_view,
 )
+from ui.data_display import render_readable_data
 
 
 def seed_default_venture_if_empty():
@@ -214,7 +215,39 @@ def render_settings_view():
     st.markdown("---")
     st.markdown("### Global Token Budget Manager")
     b_summary = global_token_manager.get_summary()
-    st.json(b_summary)
+    budget_cols = st.columns(3)
+    budget_cols[0].metric("Token Limit", f"{b_summary['max_total_tokens']:,}")
+    budget_cols[1].metric("Tokens Used", f"{b_summary['total_used']:,}")
+    budget_cols[2].metric("Tokens Remaining", f"{b_summary['total_remaining']:,}")
+    st.progress(min(1.0, max(0.0, b_summary["usage_percent"] / 100)))
+    st.caption(f"{b_summary['usage_percent']:.1f}% of the total output-token budget used")
+
+    if b_summary["agent_usage"]:
+        st.markdown("#### Usage by AI Agent")
+        st.dataframe(
+            [
+                {"AI Agent": name.replace("_", " ").title(), "Tokens Used": tokens}
+                for name, tokens in b_summary["agent_usage"].items()
+            ],
+            hide_index=True,
+            use_container_width=True,
+        )
+
+    if b_summary["call_history"]:
+        with st.expander("View individual agent calls"):
+            st.dataframe(
+                [
+                    {
+                        "AI Agent": call["agent"].replace("_", " ").title(),
+                        "Tokens This Call": call["tokens_used"],
+                        "Total Used": call["cumulative_used"],
+                        "Remaining": call["remaining"],
+                    }
+                    for call in b_summary["call_history"]
+                ],
+                hide_index=True,
+                use_container_width=True,
+            )
 
 
 def main():
