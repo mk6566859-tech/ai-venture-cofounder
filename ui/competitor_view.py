@@ -9,6 +9,12 @@ import plotly.express as px
 import pandas as pd
 from database.models import Startup, AgentResult, StartupAnalysis
 from ui.styles import get_width_kwargs
+from ui.data_display import (
+    readable_text,
+    render_additional_data,
+    render_readable_data,
+    safe_readable_text,
+)
 
 
 def render_competitor_view(
@@ -50,6 +56,8 @@ def render_competitor_view(
         f"High pricing and rigid vendor lock-in from legacy alternatives in {startup.country}",
         f"Unoptimized user workflows causing high friction and customer churn",
     ])
+    if not isinstance(market_gaps, list):
+        market_gaps = [market_gaps]
 
     # USP Banner Card
     st.markdown(
@@ -59,7 +67,7 @@ def render_competitor_view(
                 Defensible Unique Selling Proposition (USP)
             </div>
             <div style="font-size: 1.25rem; font-weight: 700; color: #FFFFFF; margin-top: 6px;">
-                {usp}
+                {safe_readable_text(usp)}
             </div>
         </div>
         """,
@@ -88,13 +96,23 @@ def render_competitor_view(
             "target_customers": f"Budget-constrained {startup.target_customer}",
         },
     ]
+    if not isinstance(raw_competitors, list):
+        raw_competitors = [raw_competitors]
 
     for comp in raw_competitors:
-        name = comp.get("name", "Competitor")
-        c_type = comp.get("type", "Market Player")
-        pricing = comp.get("pricing", "Standard pricing")
+        if not isinstance(comp, dict):
+            render_readable_data({"Competitor details": comp})
+            continue
+
+        name = safe_readable_text(comp.get("name", "Competitor"))
+        c_type = safe_readable_text(comp.get("type", "Market Player"))
+        pricing = safe_readable_text(comp.get("pricing", "Standard pricing"))
         strengths = comp.get("strengths", [])
         weaknesses = comp.get("weaknesses", [])
+        if not isinstance(strengths, list):
+            strengths = [strengths]
+        if not isinstance(weaknesses, list):
+            weaknesses = [weaknesses]
 
         st.markdown(
             f"""
@@ -109,21 +127,26 @@ def render_competitor_view(
                     </div>
                 </div>
                 <div style="color: #94A3B8; font-size: 0.85rem; margin-bottom: 12px;">
-                    {comp.get('products_services', '')}
+                    {safe_readable_text(comp.get('products_services', ''))}
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.82rem;">
                     <div>
                         <div style="color: #10B981; font-weight: 700; margin-bottom: 4px;">Key Strengths:</div>
-                        {''.join([f'<div style="color: #E2E8F0;">• {s}</div>' for s in strengths])}
+                        {''.join([f'<div style="color: #E2E8F0;">• {safe_readable_text(s)}</div>' for s in strengths])}
                     </div>
                     <div>
                         <div style="color: #EF4444; font-weight: 700; margin-bottom: 4px;">Vulnerabilities / Weaknesses:</div>
-                        {''.join([f'<div style="color: #E2E8F0;">• {w}</div>' for w in weaknesses])}
+                        {''.join([f'<div style="color: #E2E8F0;">• {safe_readable_text(w)}</div>' for w in weaknesses])}
                     </div>
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
+        )
+        render_additional_data(
+            comp,
+            {"name", "type", "pricing", "products_services", "strengths", "weaknesses"},
+            f"More details: {readable_text(comp.get('name', 'Competitor'))}",
         )
 
     # 3. Dynamic Market Positioning Matrix (Plotly Scatter Chart)
@@ -136,9 +159,11 @@ def render_competitor_view(
 
     palette = ["#EF4444", "#3B82F6", "#F59E0B", "#8B5CF6"]
     for idx, c in enumerate(raw_competitors[:3]):
-        c_name = c.get("name", f"Alternative {idx+1}")
+        if not isinstance(c, dict):
+            continue
+        c_name = readable_text(c.get("name", f"Alternative {idx+1}"))[:24]
         pos_rows.append({
-            "Entity": c_name[:24],
+            "Entity": c_name,
             "Value Advantage (1-10)": max(2.5, 7.0 - (idx * 1.5)),
             "Product Differentiation (1-10)": max(3.0, 6.5 - (idx * 1.2)),
             "Size": 18,
@@ -175,8 +200,14 @@ def render_competitor_view(
         st.markdown(
             f"""
             <div style="background: rgba(99, 102, 241, 0.08); border-left: 3px solid #6366F1; padding: 10px 14px; margin-bottom: 6px; border-radius: 4px; font-size: 0.88rem; color: #FFFFFF;">
-                ✓ {gap}
+                ✓ {safe_readable_text(gap)}
             </div>
             """,
             unsafe_allow_html=True,
         )
+
+    render_additional_data(
+        data,
+        {"recommended_usp", "market_gaps", "competitors"},
+        "Additional competitive analysis details",
+    )

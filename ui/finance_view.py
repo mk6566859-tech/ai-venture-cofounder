@@ -10,6 +10,12 @@ import plotly.express as px
 from database.models import Startup, AgentResult, StartupAnalysis
 from services.financial_service import FinancialService
 from ui.styles import get_width_kwargs
+from ui.data_display import (
+    render_additional_data,
+    render_agent_output,
+    render_readable_data,
+    safe_readable_text,
+)
 
 
 def render_finance_view(
@@ -40,8 +46,9 @@ def render_finance_view(
 
     fin_res = agent_results.get("finance")
     if fin_res and fin_res.status == "failed":
-        err_msg = fin_res.structured_output.get("error", "Unit economics and financial modeling could not be completed.") if isinstance(fin_res.structured_output, dict) else str(fin_res.raw_output)
-        st.error(f"⚠️ **Finance Agent Error:** {err_msg}")
+        st.error("⚠️ **Finance Agent Error:** Unit economics and financial modeling could not be completed.")
+        with st.expander("View finance agent details"):
+            render_agent_output(fin_res.structured_output, fin_res.raw_output or "")
         st.warning("Financial model, burn rate projections, and unit economics are currently unavailable for this venture.")
         return
 
@@ -52,14 +59,15 @@ def render_finance_view(
     data: Dict[str, Any] = fin_res.structured_output if (fin_res and fin_res.structured_output) else {}
 
     currency = data.get("currency") or startup.currency or "$"
+    currency_label = safe_readable_text(currency)
     budget_val = float(startup.budget or 10000.0)
 
     # Deterministic budget-scaled financial allocations if specific items missing
     dev_cost = float(data.get("development_costs") or max(2500.0, budget_val * 0.45))
     monthly_ops = float(data.get("monthly_operating_costs") or max(350.0, budget_val * 0.08))
     monthly_mkt = float(data.get("monthly_marketing_costs") or max(300.0, budget_val * 0.07))
-    break_even_str = str(data.get("break_even_point") or f"Approx. 350-500 paying users or monthly revenue of {currency}{monthly_ops + monthly_mkt:,.0f}")
-    revenue_model = str(data.get("revenue_model") or (analysis.revenue_model if analysis else "Tiered subscriptions and service fees"))
+    break_even_str = safe_readable_text(data.get("break_even_point") or f"Approx. 350-500 paying users or monthly revenue of {currency}{monthly_ops + monthly_mkt:,.0f}")
+    revenue_model = safe_readable_text(data.get("revenue_model") or (analysis.revenue_model if analysis else "Tiered subscriptions and service fees"))
 
     # 1. Metric Cards Row
     m1, m2, m3, m4 = st.columns(4)
@@ -68,7 +76,7 @@ def render_finance_view(
             f"""
             <div class="venture-card">
                 <div class="stat-label">Initial Dev Investment</div>
-                <div class="stat-value" style="color: #F8FAFC;">{currency}{dev_cost:,.0f}</div>
+                <div class="stat-value" style="color: #F8FAFC;">{currency_label}{dev_cost:,.0f}</div>
                 <div style="color: #94A3B8; font-size: 0.75rem; margin-top: 4px;">Software & Architecture</div>
             </div>
             """,
@@ -79,7 +87,7 @@ def render_finance_view(
             f"""
             <div class="venture-card">
                 <div class="stat-label">Monthly Operating Burn</div>
-                <div class="stat-value" style="color: #F59E0B;">{currency}{monthly_ops:,.0f}</div>
+                <div class="stat-value" style="color: #F59E0B;">{currency_label}{monthly_ops:,.0f}</div>
                 <div style="color: #94A3B8; font-size: 0.75rem; margin-top: 4px;">Hosting & Ops overhead</div>
             </div>
             """,
@@ -90,7 +98,7 @@ def render_finance_view(
             f"""
             <div class="venture-card">
                 <div class="stat-label">Monthly Acquisition Burn</div>
-                <div class="stat-value" style="color: #8B5CF6;">{currency}{monthly_mkt:,.0f}</div>
+                <div class="stat-value" style="color: #8B5CF6;">{currency_label}{monthly_mkt:,.0f}</div>
                 <div style="color: #94A3B8; font-size: 0.75rem; margin-top: 4px;">Growth & Customer acquisition</div>
             </div>
             """,
@@ -104,7 +112,7 @@ def render_finance_view(
             <div class="venture-card">
                 <div class="stat-label">Capital Runway</div>
                 <div class="stat-value" style="color: #10B981;">{runway} <span style="font-size: 1rem; color: #64748B;">Mo</span></div>
-                <div style="color: #94A3B8; font-size: 0.75rem; margin-top: 4px;">Based on {currency}{budget_val:,.0f} budget</div>
+                <div style="color: #94A3B8; font-size: 0.75rem; margin-top: 4px;">Based on {currency_label}{budget_val:,.0f} budget</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -149,8 +157,8 @@ def render_finance_view(
         margin=dict(l=20, r=20, t=30, b=20),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color="#F8FAFC")),
         xaxis=dict(gridcolor="#1E293B", color="#94A3B8"),
-        yaxis=dict(gridcolor="#1E293B", color="#94A3B8", title=f"Monthly Amount ({currency})"),
-        yaxis2=dict(overlaying="y", side="right", color="#6366F1", title=f"Treasury Balance ({currency})", showgrid=False),
+        yaxis=dict(gridcolor="#1E293B", color="#94A3B8", title=f"Monthly Amount ({currency_label})"),
+        yaxis2=dict(overlaying="y", side="right", color="#6366F1", title=f"Treasury Balance ({currency_label})", showgrid=False),
     )
     st.plotly_chart(fig, **get_width_kwargs(True))
 
@@ -210,27 +218,47 @@ def render_finance_view(
         {"tier_name": "Pro Growth Tier", "price": 19.99, "billing_period": "monthly", "target_persona": f"Core active {startup.target_customer}"},
         {"tier_name": "Enterprise / Scale Tier", "price": 49.99, "billing_period": "monthly", "target_persona": f"High-volume power users in {startup.country}"},
     ]
+    if not isinstance(pricing_list, list):
+        pricing_list = [pricing_list]
+    pricing_tiers = [tier for tier in pricing_list if isinstance(tier, dict)]
 
     st.markdown("### 🏷️ Recommended Pricing Tiers")
-    p_cols = st.columns(len(pricing_list))
-    for col, tier in zip(p_cols, pricing_list):
-        t_name = tier.get("tier_name", "Tier")
-        t_price = tier.get("price", 0)
-        t_period = tier.get("billing_period", "monthly")
-        t_persona = tier.get("target_persona", "Target user")
+    if len(pricing_tiers) != len(pricing_list):
+        render_readable_data({"Pricing options": [tier for tier in pricing_list if not isinstance(tier, dict)]})
+    if pricing_tiers:
+        p_cols = st.columns(len(pricing_tiers))
+        for col, tier in zip(p_cols, pricing_tiers):
+            t_name = tier.get("tier_name", "Tier")
+            t_price = tier.get("price", 0)
+            t_period = tier.get("billing_period", "monthly")
+            t_persona = tier.get("target_persona", "Target user")
 
-        with col:
-            st.markdown(
-                f"""
-                <div class="venture-card" style="text-align: center;">
-                    <div style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin-bottom: 6px;">{t_name}</div>
-                    <div style="font-size: 1.6rem; font-weight: 800; color: #6366F1;">
-                        {currency}{t_price} <span style="font-size: 0.75rem; color: #64748B;">/{t_period}</span>
+            with col:
+                st.markdown(
+                    f"""
+                    <div class="venture-card" style="text-align: center;">
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF; margin-bottom: 6px;">{safe_readable_text(t_name)}</div>
+                        <div style="font-size: 1.6rem; font-weight: 800; color: #6366F1;">
+                            {currency_label}{safe_readable_text(t_price)} <span style="font-size: 0.75rem; color: #64748B;">/{safe_readable_text(t_period)}</span>
+                        </div>
+                        <div style="font-size: 0.78rem; color: #94A3B8; margin-top: 8px;">
+                            {safe_readable_text(t_persona)}
+                        </div>
                     </div>
-                    <div style="font-size: 0.78rem; color: #94A3B8; margin-top: 8px;">
-                        {t_persona}
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+    render_additional_data(
+        data,
+        {
+            "currency",
+            "development_costs",
+            "monthly_operating_costs",
+            "monthly_marketing_costs",
+            "break_even_point",
+            "revenue_model",
+            "pricing_options",
+        },
+        "Additional financial assumptions and details",
+    )

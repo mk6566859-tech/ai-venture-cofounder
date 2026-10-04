@@ -6,8 +6,7 @@ from typing import Dict, Any, Optional
 import streamlit as st
 from database.models import Startup, AgentResult
 from utils.constants import AGENT_METADATA
-from utils.formatters import clean_markdown_json
-from ui.data_display import render_readable_data
+from ui.data_display import render_agent_output
 
 
 def render_agents_view(startup: Optional[Startup], agent_results: Dict[str, AgentResult]):
@@ -78,11 +77,7 @@ def render_agents_view(startup: Optional[Startup], agent_results: Dict[str, Agen
             # Details expander
             with st.expander(f"View Details: {meta.get('title', key)}"):
                 if res and (res.structured_output or res.raw_output):
-                    structured_output = res.structured_output or clean_markdown_json(res.raw_output)
-                    if structured_output:
-                        render_readable_data(structured_output)
-                    elif res.raw_output:
-                        st.markdown(res.raw_output)
+                    render_agent_output(res.structured_output, res.raw_output or "")
                 else:
                     st.write("Agent has not yet been executed for this venture. Run analysis from the Startup Idea screen.")
             st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)

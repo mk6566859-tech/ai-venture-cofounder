@@ -8,6 +8,7 @@ import streamlit as st
 import plotly.graph_objects as go
 from database.models import Startup, AgentResult, StartupAnalysis
 from ui.styles import get_width_kwargs
+from ui.data_display import render_additional_data, render_readable_data, safe_readable_text
 
 
 def render_market_view(
@@ -52,7 +53,7 @@ def render_market_view(
     if score is None:
         score = 0
 
-    growth = data.get("growth_potential", "High")
+    growth = safe_readable_text(data.get("growth_potential", "High"))
     local_info = data.get("local_market_nuances", f"Strong localized demand in {startup.country}.")
 
     # Top Metric Banner
@@ -100,15 +101,7 @@ def render_market_view(
             f"High costs making existing alternatives inefficient for {startup.target_customer}",
             f"Lack of tailored features addressing core workflow needs",
         ]
-        for p in problems:
-            st.markdown(
-                f"""
-                <div style="background: rgba(239, 68, 68, 0.08); border-left: 3px solid #EF4444; padding: 12px; margin-bottom: 8px; border-radius: 4px; font-size: 0.88rem; color: #F8FAFC;">
-                    {p}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        render_readable_data({"Customer problems": problems})
 
     with c2:
         st.markdown("### 💡 High-Value Market Opportunities")
@@ -117,15 +110,7 @@ def render_market_view(
             f"Cost-efficient business model unlocking rapid adoption",
             f"Strong localized network effects across {startup.country}",
         ]
-        for op in opps:
-            st.markdown(
-                f"""
-                <div style="background: rgba(16, 185, 129, 0.08); border-left: 3px solid #10B981; padding: 12px; margin-bottom: 8px; border-radius: 4px; font-size: 0.88rem; color: #F8FAFC;">
-                    {op}
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        render_readable_data({"Market opportunities": opps})
 
     # 3. Market Trends Radar / Dynamics Chart
     st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
@@ -167,8 +152,7 @@ def render_market_view(
             f"Sector benchmark: Verified high repeat usage potential among {startup.target_customer}.",
             f"Regional indicators: Strong demand growth in {startup.country}.",
         ]
-        for ev in evidence:
-            st.markdown(f"- {ev}")
+        render_readable_data({"Retrieved evidence": evidence})
 
     with e_col2:
         st.markdown("### 📝 Strategic Assumptions Under Validation")
@@ -176,5 +160,17 @@ def render_market_view(
             f"{startup.target_customer} are willing to transition from legacy methods to {startup.name}.",
             f"Initial customer acquisition cost remains sustainable with a {startup.currency}{startup.budget:,.0f} budget.",
         ]
-        for asmp in assumptions:
-            st.markdown(f"- {asmp}")
+        render_readable_data({"Assumptions": assumptions})
+
+    render_additional_data(
+        data,
+        {
+            "market_score",
+            "growth_potential",
+            "customer_problems",
+            "market_opportunities",
+            "retrieved_evidence",
+            "assumptions",
+        },
+        "Additional market research details",
+    )
