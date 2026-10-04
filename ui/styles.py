@@ -135,16 +135,6 @@ DARK_THEME_CSS = """
 /* Keep the header visible so Streamlit's sidebar reopen control remains available. */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-
-/* Make Streamlit's native sidebar toggle easy to hit and keep it above header content. */
-[data-testid="stSidebarCollapseButton"],
-[data-testid="stExpandSidebarButton"] {
-    min-width: 44px !important;
-    min-height: 44px !important;
-    position: relative !important;
-    z-index: 1000 !important;
-    pointer-events: auto !important;
-}
 </style>
 """
 

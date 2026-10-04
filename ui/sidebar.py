@@ -11,6 +11,11 @@ from rag.faiss_manager import faiss_manager
 from ui.styles import render_html
 
 
+def _sync_current_page() -> None:
+    """Persist sidebar navigation changes before the app reruns."""
+    st.session_state["current_page"] = st.session_state["navigation_choice"]
+
+
 def render_sidebar(startups: List[Startup], active_startup: Optional[Startup]) -> str:
     """
     Renders the dark sidebar and returns the currently selected page key.
@@ -67,16 +72,21 @@ def render_sidebar(startups: List[Startup], active_startup: Optional[Startup]) -
 
         nav_labels = [item[0] for item in NAV_ITEMS]
         current_nav = st.session_state["current_page"]
-        default_nav_idx = nav_labels.index(current_nav) if current_nav in nav_labels else 0
+        if current_nav not in nav_labels:
+            current_nav = nav_labels[0]
+            st.session_state["current_page"] = current_nav
 
-        # Render styled radio navigation
-        page = st.radio(
+        # Keep programmatic page changes (for example dashboard shortcuts) in sync.
+        if st.session_state.get("navigation_choice") != current_nav:
+            st.session_state["navigation_choice"] = current_nav
+
+        st.radio(
             "Navigation",
             options=nav_labels,
-            index=default_nav_idx,
+            key="navigation_choice",
+            on_change=_sync_current_page,
             label_visibility="collapsed",
         )
-        st.session_state["current_page"] = page
 
         render_html("<div style='height: 24px;'></div>")
 
@@ -127,4 +137,4 @@ def render_sidebar(startups: List[Startup], active_startup: Optional[Startup]) -
             """
         )
 
-        return page
+        return st.session_state["current_page"]
