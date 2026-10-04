@@ -8,12 +8,12 @@ from utils.constants import NAV_ITEMS, APP_NAME
 from database.models import Startup
 from config.llm_config import global_token_manager, get_llm_config
 from rag.faiss_manager import faiss_manager
-from ui.styles import render_html
+from ui.styles import render_html, get_width_kwargs
 
 
-def _sync_current_page() -> None:
-    """Persist sidebar navigation changes before the app reruns."""
-    st.session_state["current_page"] = st.session_state["navigation_choice"]
+def _set_current_page(page: str) -> None:
+    """Persist a sidebar navigation button selection before the app reruns."""
+    st.session_state["current_page"] = page
 
 
 def render_sidebar(startups: List[Startup], active_startup: Optional[Startup]) -> str:
@@ -76,17 +76,16 @@ def render_sidebar(startups: List[Startup], active_startup: Optional[Startup]) -
             current_nav = nav_labels[0]
             st.session_state["current_page"] = current_nav
 
-        # Keep programmatic page changes (for example dashboard shortcuts) in sync.
-        if st.session_state.get("navigation_choice") != current_nav:
-            st.session_state["navigation_choice"] = current_nav
-
-        st.radio(
-            "Navigation",
-            options=nav_labels,
-            key="navigation_choice",
-            on_change=_sync_current_page,
-            label_visibility="collapsed",
-        )
+        # Use buttons instead of radio controls for a more polished, direct navigation.
+        for label, icon in NAV_ITEMS:
+            st.button(
+                f"{icon}  {label}",
+                key=f"nav_{label.lower().replace(' ', '_')}",
+                type="primary" if label == current_nav else "secondary",
+                on_click=_set_current_page,
+                args=(label,),
+                **get_width_kwargs(True),
+            )
 
         render_html("<div style='height: 24px;'></div>")
 

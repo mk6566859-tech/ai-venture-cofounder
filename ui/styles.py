@@ -132,6 +132,31 @@ DARK_THEME_CSS = """
     transition: all 0.2s ease !important;
 }
 
+/* Premium sidebar navigation buttons */
+[data-testid="stSidebar"] .stButton > button {
+    min-height: 42px;
+    justify-content: flex-start;
+    text-align: left;
+    border-radius: 10px !important;
+    font-size: 0.88rem;
+}
+[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #CBD5E1;
+}
+[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
+    background: #131927;
+    border-color: #26334B;
+    color: #FFFFFF;
+}
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+    background: linear-gradient(110deg, #4F46E5, #6366F1 58%, #3B82F6) !important;
+    border: 1px solid rgba(129, 140, 248, 0.55) !important;
+    box-shadow: 0 5px 16px rgba(79, 70, 229, 0.24);
+    color: #FFFFFF !important;
+}
+
 /* Keep the header visible so Streamlit's sidebar reopen control remains available. */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
