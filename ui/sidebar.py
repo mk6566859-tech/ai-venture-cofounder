@@ -3,6 +3,7 @@ Sidebar navigation component.
 Renders navigation items, active startup selector, token budget indicator, and founder profile.
 """
 from typing import Optional, List
+from pathlib import Path
 import streamlit as st
 from utils.constants import NAV_ITEMS, APP_NAME
 from database.models import Startup
@@ -22,26 +23,24 @@ def render_sidebar(startups: List[Startup], active_startup: Optional[Startup]) -
     """
     with st.sidebar:
         # 1. Branding Header
-        render_html(
-            f"""
-            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 6px 20px 6px;">
-                <div style="background: linear-gradient(135deg, #6366F1, #3B82F6);
-                            width: 38px; height: 38px; border-radius: 10px;
-                            display: flex; align-items: center; justify-content: center;
-                            font-size: 1.3rem; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);">
-                    🚀
-                </div>
-                <div>
-                    <div style="font-weight: 700; font-size: 1.05rem; color: #FFFFFF; letter-spacing: -0.02em;">
+        logo_col, brand_col = st.columns([0.9, 3.4], gap="small")
+        with logo_col:
+            logo_path = Path(__file__).resolve().parents[1] / "assets" / "venture_logo.svg"
+            st.image(logo_path.read_text(encoding="utf-8"), width=46)
+        with brand_col:
+            render_html(
+                f"""
+                <div style="padding: 5px 0 0 0;">
+                    <div style="font-weight: 750; font-size: 0.98rem; color: #FFFFFF; letter-spacing: -0.025em;">
                         {APP_NAME}
                     </div>
-                    <div style="font-size: 0.72rem; color: #94A3B8; font-weight: 500;">
+                    <div style="font-size: 0.72rem; color: #94A3B8; font-weight: 500; margin-top: 3px;">
                         AI Founding Suite
                     </div>
                 </div>
-            </div>
-            """
-        )
+                """
+            )
+        render_html("<div style='height: 14px;'></div>")
 
         # 2. Startup Selector (if startups exist)
         if startups:

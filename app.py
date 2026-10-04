@@ -5,6 +5,7 @@ Compatible with Python 3.12, Streamlit Community Cloud, and Groq.
 """
 import sys
 import os
+from pathlib import Path
 
 # Ensure current directory is on sys.path for clean module imports
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
@@ -12,9 +13,12 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 import streamlit as st
 
 # Configure page settings
+logo_svg = (
+    Path(__file__).resolve().parent / "assets" / "venture_logo.svg"
+).read_text(encoding="utf-8")
 st.set_page_config(
     page_title="AI Venture Co-Founder",
-    page_icon="🚀",
+    page_icon=logo_svg,
     layout="wide",
     initial_sidebar_state="expanded",
 )
